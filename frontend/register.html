@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - RoadRescue</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #121212;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.5)), url('assets/background.jpeg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+    
+   
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.bg-image {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box; 
+}
+        .auth-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 35px 30px;
+            width: 100%;
+            max-width: 500px;
+            color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .app-logo {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid #00d2ff;
+            margin-bottom: 15px;
+        }
+        .form-control, .form-select {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #333333;
+        }
+        .form-control:focus, .form-select:focus {
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+            background: #ffffff;
+        }
+        .btn-custom-primary {
+            background: linear-gradient(45deg, #0072ff, #00d2ff);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+            border-radius: 8px;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .btn-custom-primary:hover {
+            transform: translateY(-2px);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-image">
+        <div class="auth-card text-center">
+            <img src="assets/logo.jpeg" alt="RoadRescue Logo" class="app-logo">
+            <h3 class="mb-2 fw-bold">Create Account</h3>
+            <p class="small text-light opacity-75 mb-4">Join our network for quick roadside assistance</p>
+            
+            <div id="errorMessage" class="alert alert-danger d-none text-start small" role="alert"></div>
+            <div id="successMessage" class="alert alert-success d-none text-start small" role="alert"></div>
+
+            <form id="registerForm">
+                <div class="row g-2 mb-3">
+                    <div class="col-12 col-sm-6 text-start">
+                        <label class="form-label small text-light opacity-75">Full Name</label>
+                        <input type="text" class="form-control" id="fullName" required placeholder="John Doe">
+                    </div>
+                    <div class="col-12 col-sm-6 text-start">
+                        <label class="form-label small text-light opacity-75">Username</label>
+                        <input type="text" class="form-control" id="username" required placeholder="johndoe12">
+                    </div>
+                </div>
+
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-light opacity-75">Email Address</label>
+                    <input type="email" class="form-control" id="email" required placeholder="john@example.com">
+                </div>
+
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-light opacity-75">Phone Number</label>
+                    <input type="tel" class="form-control" id="phone" required placeholder="e.g., +123456789">
+                </div>
+
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-light opacity-75">Password</label>
+                    <input type="password" class="form-control" id="password" required placeholder="Create secure password">
+                </div>
+
+                <div class="mb-4 text-start">
+                    <label class="form-label small text-light opacity-75">I want to register as a:</label>
+                    <style>option { color: #333333; }</style>
+                    <select class="form-select" id="role" required>
+                        <option value="" disabled selected>Choose your account type...</option>
+                        <option value="VEHICLE_OWNER">Vehicle Owner (Need Help Breakdown Assistance)</option>
+                        <option value="SERVICE_PROVIDER">Service Provider / Workshop Owner (Offer Help)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-custom-primary mb-3">Submit Registration</button>
+            </form>
+            
+            <div class="small mt-2">
+                <span class="text-light opacity-75">Already have an account?</span> 
+                <a href="login.html" class="text-info text-decoration-none fw-bold">Login here</a>
+            </div>
+            <div class="small mt-2">
+                <a href="index.html" class="text-light text-decoration-none opacity-50">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+ </body>
+</html>

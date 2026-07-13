@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadRescue - Smart Roadside Assistance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+     
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #121212;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.5)), url('assets/background.jpeg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+    
+   
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.bg-image {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box; 
+}
+        
+        .landing-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 650px;
+            color: #ffffff;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        .app-logo {
+            width: 130px;
+            height: 130px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid #00d2ff;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.5);
+        }
+        .headline {
+            font-weight: 800;
+            letter-spacing: 1px;
+            background: linear-gradient(45deg, #00d2ff, #0072ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .btn-custom-primary {
+            background: linear-gradient(45deg, #0072ff, #00d2ff);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            font-weight: 600;
+            border-radius: 30px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-custom-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 210, 255, 0.4);
+            color: white;
+        }
+        .btn-custom-outline {
+            background: transparent;
+            color: #00d2ff;
+            border: 2px solid #00d2ff;
+            padding: 12px 35px;
+            font-weight: 600;
+            border-radius: 30px;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .btn-custom-outline:hover {
+            background: rgba(0, 210, 255, 0.1);
+            transform: translateY(-2px);
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-image">
+        <div class="landing-card animate__animated animate__fadeIn">
+            <img src="assets/logo.jpeg" alt="RoadRescue Logo" class="app-logo">
+            
+            <h1 class="display-5 headline mb-3">ROADRESCUE</h1>
+            <p class="lead mb-4 font-weight-normal">
+                Your trusted, next-generation roadside emergency companion. Whether you face an unexpected breakdown, flat battery, empty fuel tank, or need a prompt tow service, we instantly bridge the gap between stranded drivers and certified nearby mechanics.
+            </p>
+            <p class="text-light opacity-75 small mb-5">
+                Real-time map tracking • Transparent review ratings • Multi-location service providers
+            </p>
+            
+            <hr class="my-4 opacity-25">
+
+            <div class="d-flex justify-content-center gap-3">
+                <a href="login.html" class="btn btn-custom-primary btn-lg">Login Portal</a>
+                <a href="register.html" class="btn btn-custom-outline btn-lg">Create Account</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
