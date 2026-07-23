@@ -171,5 +171,231 @@
             </div>
         </div>
     </div> 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let allOwners = [];
+        let allProviders = [];
+        let showAllOwners = false;
+        let showAllProviders = false;
+        let adminMap = null;
+        let mapMarkers = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const userDataString = localStorage.getItem('roadRescueUser');
+            if (!userDataString) {
+                window.location.href = 'login.html';
+                return;
+            }
+            const user = JSON.parse(userDataString);
+            if (user.role !== 'ADMIN') {
+                alert("Unauthorized Access.");
+                window.location.href = 'login.html';
+                return;
+            }
+
+            document.getElementById('welcomeMessage').textContent = `Welcome, Admin (ID: ${user.id})`;
+            
+            loadPendingUsers();
+            loadOwners();
+            loadProviders();
+        });
+
+        function logout() {
+            localStorage.removeItem('roadRescueUser');
+            window.location.href = 'index.html';
+        }
+
+        async function loadPendingUsers() {
+            const tb = document.getElementById('pendingUsersTableBody');
+            try {
+                const res = await fetch('http://localhost:8080/api/users/pending');
+                if (res.ok) {
+                    const users = await res.json();
+                    tb.innerHTML = '';
+                    if (users.length === 0) {
+                        tb.innerHTML = `<tr><td colspan="5" class="text-center text-success">No pending requests.</td></tr>`;
+                        return;
+                    }
+                    users.forEach(u => {
+                        tb.innerHTML += `
+                            <tr>
+                                <td>#${u.id}</td><td class="fw-bold">${u.phone}</td><td>@${u.username}</td>
+                                <td><span class="badge badge-role rounded-pill px-3">${u.role.replace('_', ' ')}</span></td>
+                                <td>
+                                    <button class="btn btn-success btn-sm rounded-pill px-3 me-2" onclick="updateUserStatus(${u.id}, 'APPROVED')">Approve</button>
+                                    <button class="btn btn-danger btn-sm rounded-pill px-3" onclick="updateUserStatus(${u.id}, 'REJECTED')">Reject</button>
+                                </td>
+                            </tr>`;
+                    });
+                }
+            } catch (e) {
+                tb.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Server connection error.</td></tr>`;
+            }
+        }
+
+        async function updateUserStatus(userId, newStatus) {
+            if (!confirm(`Are you sure you want to ${newStatus} this user?`)) return;
+            try {
+                const res = await fetch(`http://localhost:8080/api/users/${userId}/status?status=${newStatus}`, { method: 'PUT' });
+                if (res.ok) {
+                    alert(`User successfully ${newStatus}!`);
+                    loadPendingUsers();
+                    loadOwners();
+                    loadProviders();
+                }
+            } catch (e) { alert("Server connection error."); }
+        }
+
+        async function loadOwners() {
+            const tb = document.getElementById('ownersTableBody');
+            try {
+                const res = await fetch('http://localhost:8080/api/users/owners');
+                if (res.ok) {
+                    allOwners = await res.json();
+                    renderOwners();
+                }
+            } catch (e) {
+                tb.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Server connection error.</td></tr>`;
+            }
+        }
+
+        function renderOwners() {
+            const tb = document.getElementById('ownersTableBody');
+            const btn = document.getElementById('btnToggleOwners');
+            tb.innerHTML = '';
+
+            if (allOwners.length === 0) {
+                tb.innerHTML = `<tr><td colspan="5" class="text-center opacity-75">No vehicle owners registered yet.</td></tr>`;
+                btn.classList.add('d-none');
+                return;
+            }
+
+            const displayList = showAllOwners ? allOwners : allOwners.slice(0, 5);
+
+            displayList.forEach(u => {
+                tb.innerHTML += `
+                    <tr>
+                        <td>#${u.id}</td><td class="fw-bold">${u.phone}</td>
+                        <td>@${u.username}</td><td>${u.email}</td>
+                        <td><span class="badge bg-success rounded-pill px-3">Approved</span></td>
+                    </tr>`;
+            });
+
+            if (allOwners.length > 5) {
+                btn.classList.remove('d-none');
+                btn.textContent = showAllOwners ? "View Less" : "View More";
+            } else {
+                btn.classList.add('d-none');
+            }
+        }
+
+        function toggleOwners() {
+            showAllOwners = !showAllOwners;
+            renderOwners();
+        }
+
+        async function loadProviders() {
+            const tb = document.getElementById('providersTableBody');
+            try {
+                const res = await fetch('http://localhost:8080/api/shops/providers');
+                if (res.ok) {
+                    allProviders = await res.json();
+                    renderProviders();
+                }
+            } catch (e) {
+                tb.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Server connection error.</td></tr>`;
+            }
+        }
+
+        function renderProviders() {
+            const tb = document.getElementById('providersTableBody');
+            const btn = document.getElementById('btnToggleProviders');
+            tb.innerHTML = '';
+
+            if (allProviders.length === 0) {
+                tb.innerHTML = `<tr><td colspan="5" class="text-center opacity-75">No service providers registered yet.</td></tr>`;
+                btn.classList.add('d-none');
+                return;
+            }
+
+            const displayList = showAllProviders ? allProviders : allProviders.slice(0, 5);
+
+            displayList.forEach(p => {
+                tb.innerHTML += `
+                    <tr>
+                        <td>#${p.id}</td><td class="fw-bold">${p.phone}</td>
+                        <td>@${p.username}</td>
+                        <td><span class="badge bg-success rounded-pill px-3">Approved</span></td>
+                        <td>
+                            <button class="btn btn-primary btn-sm rounded-pill px-3" onclick="viewMap(${p.id}, '${p.username}')">
+                                📍 View Map
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+
+            if (allProviders.length > 5) {
+                btn.classList.remove('d-none');
+                btn.textContent = showAllProviders ? "View Less" : "View More";
+            } else {
+                btn.classList.add('d-none');
+            }
+        }
+
+        function toggleProviders() {
+            showAllProviders = !showAllProviders;
+            renderProviders();
+        }
+
+        async function viewMap(providerId, providerUsername) {
+            document.getElementById('mapModalTitle').textContent = `Locations for @${providerUsername}`;
+            const mapModal = new bootstrap.Modal(document.getElementById('mapModal'));
+            mapModal.show();
+
+            if (!adminMap) {
+                adminMap = L.map('providerMap').setView([7.8731, 80.7718], 7); 
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap'
+                }).addTo(adminMap);
+            }
+
+            setTimeout(() => { adminMap.invalidateSize(); }, 300);
+
+            mapMarkers.forEach(marker => adminMap.removeLayer(marker));
+            mapMarkers = [];
+
+            try {
+                const res = await fetch(`http://localhost:8080/api/shops/provider/${providerId}`);
+                if (res.ok) {
+                    const shops = await res.json();
+                    
+                    if (shops.length === 0) {
+                        alert("This provider has not registered any workshop locations yet.");
+                        return;
+                    }
+
+                    const bounds = [];
+                    shops.forEach(shop => {
+                        if (shop.latitude && shop.longitude) {
+                            const marker = L.marker([shop.latitude, shop.longitude])
+                                .addTo(adminMap)
+                                .bindPopup(`<b>${shop.businessName || shop.shopName}</b><br>${shop.primaryService || shop.serviceType}<br>${shop.location || ''}`);
+                            mapMarkers.push(marker);
+                            bounds.push([shop.latitude, shop.longitude]);
+                        }
+                    });
+
+                    if (bounds.length > 0) {
+                        adminMap.fitBounds(bounds, { padding: [30, 30] });
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Could not load locations from server.");
+            }
+        }
+    </script>
 </body>
 </html>
