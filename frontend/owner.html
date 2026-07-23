@@ -150,5 +150,251 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let currentUser = null;
+        let selectedLat = null;
+        let selectedLng = null;
+        let map = null;
+        let marker = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const userData = localStorage.getItem('roadRescueUser');
+            if (!userData) { window.location.href = 'login.html'; return; }
+            
+            currentUser = JSON.parse(userData);
+            if (currentUser.role !== 'VEHICLE_OWNER') {
+                window.location.href = 'login.html'; return;
+            }
+
+            document.getElementById('welcomeMessage').textContent = `Welcome, ${currentUser.username}`;
+            
+            initMap();
+            loadMyVehicles();
+            loadHistory();
+        });
+
+        function logout() {
+            localStorage.removeItem('roadRescueUser');
+            window.location.href = 'index.html';
+        }
+
+        // Initialize Map
+        function initMap() {
+            // Default center (Sri Lanka approximate)
+            map = L.map('map').setView([7.8731, 80.7718], 7); 
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(map);
+
+            map.on('click', function(e) {
+                selectedLat = e.latlng.lat;
+                selectedLng = e.latlng.lng;
+                
+                if(marker) map.removeLayer(marker);
+                marker = L.marker([selectedLat, selectedLng]).addTo(map);
+                
+                document.getElementById('coordDisplay').textContent = `Location Set: ${selectedLat.toFixed(4)}, ${selectedLng.toFixed(4)}`;
+            });
+        }
+
+        // Add Vehicle
+        document.getElementById('addVehicleForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const make = document.getElementById('vehMake').value;
+            const plate = document.getElementById('vehPlate').value;
+            
+           
+const vehicle = { 
+    vehicleNumber: plate, 
+    model: make, 
+    vehicleType: "Car" 
+};
+            
+            try {
+                const res = await fetch(`http://localhost:8080/api/vehicles/add?ownerId=${currentUser.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(vehicle)
+                });
+               if(res.ok) {
+    alert('Vehicle Added!');
+    document.getElementById('addVehicleForm').reset();
+    loadMyVehicles();
+} else {
+    const errorText = await res.text();
+    alert(`Failed to add vehicle: ${errorText}`);
+}
+} catch (err) { alert('Server error: Could not connect to backend.'); }
+        });
+
+        // Load Vehicles into dropdown
+        async function loadMyVehicles() {
+            try {
+                const res = await fetch(`http://localhost:8080/api/vehicles/owner/${currentUser.id}`);
+                if (res.ok) {
+                    const vehicles = await res.json();
+                    const select = document.getElementById('selectVehicle');
+                    select.innerHTML = '<option value="" disabled selected>Select your vehicle...</option>';
+                    vehicles.forEach(v => {
+                       select.innerHTML += `<option value="${v.id}">${v.vehicleNumber} (${v.model})</option>`;
+                    });
+                }
+            } catch(e) {}
+        }
+
+        // Search Shops
+        async function searchShops() {
+    if (!selectedLat || !selectedLng) {
+        alert("Please set your location first using the GPS button or by tapping the map!");
+        return;
+    }
+
+    const type = document.getElementById('serviceSearchDropdown').value;
+    try {
+        const res = await fetch(`http://localhost:8080/api/shops/search?serviceType=${type}`);
+        if (res.ok) {
+            let shops = await res.json();
+            const select = document.getElementById('selectShop');
+            select.innerHTML = '<option value="" disabled selected>Choose a provider...</option>';
+            
+            if(shops.length === 0) {
+                select.innerHTML = '<option disabled>No providers found for this service.</option>';
+                return;
+            }
+
+            // Calculate distance for every shop
+            shops.forEach(s => {
+                if (s.latitude && s.longitude) {
+                    s.distance = calculateDistance(selectedLat, selectedLng, s.latitude, s.longitude);
+                } else {
+                    s.distance = 9999; // If a shop has no location, put them at the bottom
+                }
+            });
+
+            // Sort the shops so the closest ones are first!
+            shops.sort((a, b) => a.distance - b.distance);
+
+            // Add them to the dropdown with the distance text
+            shops.forEach(s => {
+                let distanceText = s.distance === 9999 ? "" : ` - ${s.distance.toFixed(1)} km away`;
+                select.innerHTML += `<option value="${s.id}">${s.businessName} (Rating: ${s.averageRating || 'New'})${distanceText}</option>`;
+            });
+        }
+    } catch(e) {
+        console.error(e);
+        alert("Failed to connect to the server while searching for shops.");
+    }
+}
+
+        // Create Booking
+        document.getElementById('requestForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!selectedLat || !selectedLng) return alert("Please tap on the map to set your location!");
+            
+            const payload = {
+                ownerId: currentUser.id,
+                vehicleId: document.getElementById('selectVehicle').value,
+                shopId: document.getElementById('selectShop').value,
+                issueDescription: document.getElementById('issueDesc').value,
+                latitude: selectedLat,
+                longitude: selectedLng
+            };
+
+            try {
+                const res = await fetch('http://localhost:8080/api/bookings/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    alert("Emergency request dispatched successfully!");
+                    document.getElementById('requestForm').reset();
+                    document.getElementById('coordDisplay').textContent = "Location not set. Tap the map!";
+                    selectedLat = null; selectedLng = null;
+                    if(marker) map.removeLayer(marker);
+                    loadHistory();
+                } else alert("Failed to send request.");
+            } catch(err) { alert("Server error"); }
+        });
+
+        // Load History
+        async function loadHistory() {
+            try {
+                const res = await fetch(`http://localhost:8080/api/bookings/owner/${currentUser.id}`);
+                if (res.ok) {
+                    const history = await res.json();
+                    const tbody = document.getElementById('historyTableBody');
+                    tbody.innerHTML = '';
+                    history.forEach(b => {
+                        
+                        let actionBtn = b.status === 'ACCEPTED' ? 
+                            `<button class="btn btn-success btn-sm" onclick="completeJob(${b.id})">Mark Complete & Rate</button>` : 
+                            `<span class="opacity-50 text-white">Done</span>`;
+                            
+                        tbody.innerHTML += `
+                            <tr>
+                               <td>${b.providerPhone || 'N/A'}</td>
+                                <td><span class="badge bg-${b.status === 'PENDING' ? 'warning' : b.status === 'ACCEPTED' ? 'info' : 'success'}">${b.status}</span></td>
+                                <td>${b.issueDescription}</td>
+                                <td>${b.shop ? b.shop.businessName : 'Unknown'}</td>
+                                <td>${actionBtn}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch(e) {}
+        }
+
+        async function completeJob(bookingId) {
+            const rating = prompt("Rate the service from 1 to 5:");
+            const review = prompt("Leave a brief review:");
+            
+            if (rating >= 1 && rating <= 5) {
+                try {
+                    const res = await fetch(`http://localhost:8080/api/bookings/${bookingId}/complete`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ rating: parseInt(rating), reviewText: review || "" })
+                    });
+                    if (res.ok) { alert("Review submitted!"); loadHistory(); }
+                } catch(e) {}
+            } else { alert("Invalid rating. Must be 1-5."); }
+        }
+       // Function to get real GPS Location
+function useDeviceLocation() {
+    if (navigator.geolocation) {
+        document.getElementById('coordDisplay').textContent = "Locating you... please wait.";
+        navigator.geolocation.getCurrentPosition((position) => {
+            selectedLat = position.coords.latitude;
+            selectedLng = position.coords.longitude;
+            
+            if(marker) map.removeLayer(marker);
+            marker = L.marker([selectedLat, selectedLng]).addTo(map);
+            map.setView([selectedLat, selectedLng], 14); // Zoom in on the user
+            
+            document.getElementById('coordDisplay').textContent = `GPS Set: ${selectedLat.toFixed(4)}, ${selectedLng.toFixed(4)}`;
+        }, () => {
+            alert("Could not get location. Please allow location permissions in your browser.");
+            document.getElementById('coordDisplay').textContent = "Location not set. Tap the map!";
+        });
+    } else {
+        alert("Your browser does not support GPS.");
+    }
+}
+
+// Function to calculate distance in Kilometers
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; 
+}
+
+    </script>
     </body>
 </html>
