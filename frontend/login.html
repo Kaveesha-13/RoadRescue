@@ -107,6 +107,51 @@ body {
             </div>
         </div>
     </div>
-    
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); 
+            
+            const usernameInput = document.getElementById('username').value;
+            const passwordInput = document.getElementById('password').value;
+            const errorBox = document.getElementById('errorMessage');
+            
+            
+            errorBox.classList.add('d-none');
+
+            try {
+                // Send data to Java Backend
+                const response = await fetch('http://localhost:8080/api/users/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: usernameInput, password: passwordInput })
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    
+                    
+                    localStorage.setItem('roadRescueUser', JSON.stringify(userData));
+
+                    // Route user to correct dashboard based on their role
+                    if (userData.role === 'ADMIN') {
+                        window.location.href = 'admin.html';
+                    } else if (userData.role === 'VEHICLE_OWNER') {
+                        window.location.href = 'owner.html';
+                    } else if (userData.role === 'SERVICE_PROVIDER') {
+                        window.location.href = 'provider.html';
+                    }
+                } else {
+                    // Backend rejected login
+                    const errorText = await response.text();
+                    errorBox.textContent = errorText;
+                    errorBox.classList.remove('d-none');
+                }
+            } catch (error) {
+                // Server is down or unreachable
+                errorBox.textContent = "Cannot connect to server. Ensure Java backend is running.";
+                errorBox.classList.remove('d-none');
+            }
+        });
+    </script>
      </body>
 </html>

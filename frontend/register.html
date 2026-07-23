@@ -140,5 +140,48 @@ body {
             </div>
         </div>
     </div>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); 
+            
+            const errorBox = document.getElementById('errorMessage');
+            const successBox = document.getElementById('successMessage');
+            
+        
+            errorBox.classList.add('d-none');
+            successBox.classList.add('d-none');
+
+            
+            const payload = {
+                fullName: document.getElementById('fullName').value,
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                password: document.getElementById('password').value,
+                role: document.getElementById('role').value
+            };
+
+            try {
+                const response = await fetch('http://localhost:8080/api/users/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    successBox.innerHTML = "<strong>Registration successful!</strong> Your account is pending review. You will be able to access your dashboard as soon as the Admin approves your request.";
+                    successBox.classList.remove('d-none');
+                    document.getElementById('registerForm').reset(); // Wipe inputs clear
+                } else {
+                    const errorText = await response.text();
+                    errorBox.textContent = errorText;
+                    errorBox.classList.remove('d-none');
+                }
+            } catch (error) {
+                errorBox.textContent = "Unable to connect to the backend server. Please verify your Java Application is active.";
+                errorBox.classList.remove('d-none');
+            }
+        });
+    </script>
  </body>
 </html>
