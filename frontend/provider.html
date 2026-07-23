@@ -131,5 +131,166 @@
             </div>
         </div>
     </div>
+    <script>
+        let currentUser = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const userData = localStorage.getItem('roadRescueUser');
+            if (!userData) { window.location.href = 'login.html'; return; }
+            
+            currentUser = JSON.parse(userData);
+            if (currentUser.role !== 'SERVICE_PROVIDER') {
+                window.location.href = 'login.html'; return;
+            }
+
+            document.getElementById('welcomeMessage').textContent = `Welcome, ${currentUser.username}`;
+            loadMyShops();
+        });
+
+        function logout() {
+            localStorage.removeItem('roadRescueUser');
+            window.location.href = 'index.html';
+        }
+        // Grab GPS coordinates from the browser
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                document.getElementById('latitude').value = position.coords.latitude;
+                document.getElementById('longitude').value = position.coords.longitude;
+            },
+            (error) => {
+                alert("Could not get location. Please allow location permissions in your browser pop-up.");
+            }
+        );
+    } else {
+        alert("Geolocation is not supported by this browser.");
+    }
+}
+
+    // Add a new shop 
+document.getElementById('addShopForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    
+    const newShopData = {
+        businessName: document.getElementById('shopName').value,
+        businessRegNumber: document.getElementById('businessRegNumber').value,
+        serviceType: document.getElementById('shopServiceType').value,
+        latitude: parseFloat(document.getElementById('latitude').value),
+        longitude: parseFloat(document.getElementById('longitude').value)
+    };
+    
+    try {
+        const res = await fetch(`http://localhost:8080/api/shops/add?providerId=${currentUser.id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        
+            body: JSON.stringify(newShopData)
+        });
+        if(res.ok) {
+            alert('Workshop successfully registered!');
+            document.getElementById('addShopForm').reset();
+            loadMyShops(); 
+        } else {
+            const errorText = await res.text();
+            alert(`Failed to add workshop: ${errorText}`);
+        }
+    } catch (err) { 
+        console.error(err);
+        alert('Server error: Could not connect to backend.'); 
+    }
+});
+
+// Load Shops into dropdown
+async function loadMyShops() {
+    const select = document.getElementById('myShopsSelect');
+    try {
+        const res = await fetch(`http://localhost:8080/api/shops/provider/${currentUser.id}`);
+        if (res.ok) {
+            const shops = await res.json();
+            
+            if(shops.length === 0) {
+                select.innerHTML = '<option value="" disabled selected>No workshops registered yet.</option>';
+                return;
+            }
+
+            select.innerHTML = '<option value="" disabled selected>Select a workshop...</option>';
+            shops.forEach(shop => {
+                select.innerHTML += `<option value="${shop.id}">${shop.businessName} (${shop.serviceType})</option>`;
+            });
+        } else {
+            select.innerHTML = '<option value="" disabled selected>Error: Backend rejected request.</option>';
+        }
+    } catch(e) {
+        console.error(e);
+        select.innerHTML = '<option value="" disabled selected>Error: Cannot connect to server.</option>';
+    }
+}
+
+        // Load jobs for the selected shop
+        async function loadJobQueue() {
+            const shopId = document.getElementById('myShopsSelect').value;
+            const tbody = document.getElementById('jobQueueBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">Loading jobs...</td></tr>';
+
+            try {
+                const res = await fetch(`http://localhost:8080/api/bookings/shop/${shopId}`);
+                if (res.ok) {
+                    const jobs = await res.json();
+                    tbody.innerHTML = '';
+                    
+                    if(jobs.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-success">No pending emergencies for this shop!</td></tr>';
+                        return;
+                    }
+
+                    jobs.forEach(job => {
+                        let badgeColor = job.status === 'PENDING' ? 'warning text-dark' : job.status === 'ACCEPTED' ? 'info text-dark' : job.status === 'COMPLETED' ? 'success' : 'danger';
+                        
+                       
+                        let actionButtons = '';
+                        if (job.status === 'PENDING') {
+                            actionButtons = `
+                                <button class="btn btn-success btn-sm me-1" onclick="updateJobStatus(${job.id}, 'ACCEPTED')">Accept</button>
+                                <button class="btn btn-danger btn-sm" onclick="updateJobStatus(${job.id}, 'REJECTED')">Reject</button>
+                            `;
+                        } else if (job.status === 'ACCEPTED') {
+                            actionButtons = `<button class="btn btn-primary btn-sm" onclick="updateJobStatus(${job.id}, 'COMPLETED')">Mark Completed</button>`;
+                        } else {
+                            actionButtons = `<span class="opacity-50 text-white">Done</span>`;
+                        }
+
+                        tbody.innerHTML += `
+                            <tr>
+                               <td>${job.owner && job.owner.phone ? job.owner.phone : 'N/A'}</td>
+                                <td>${job.issueDescription}</td>
+                                <td><span class="badge bg-${badgeColor}">${job.status}</span></td>
+                                <td><a href="https://www.google.com/maps/search/?api=1&query=${job.customerLatitude},${job.customerLongitude}" target="_blank" class="text-info">View Map</a></td>
+                                <td>${actionButtons}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch(e) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Server connection failed.</td></tr>';
+            }
+        }
+
+        // Update Job Status
+        async function updateJobStatus(bookingId, status) {
+            if(!confirm(`Are you sure you want to ${status} this job?`)) return;
+
+            try {
+                const res = await fetch(`http://localhost:8080/api/bookings/${bookingId}/status?status=${status}`, {
+                    method: 'PUT'
+                });
+                if(res.ok) {
+                    alert(`Job ${status} successfully!`);
+                    loadJobQueue(); // Refresh table
+                } else alert('Error updating status');
+            } catch(e) { alert('Server error'); }
+        }
+    </script>
 </body>
 </html>
