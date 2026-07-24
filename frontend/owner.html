@@ -212,7 +212,7 @@ const vehicle = {
 };
             
             try {
-                const res = await fetch(`http://localhost:8080/api/vehicles/add?ownerId=${currentUser.id}`, {
+                const res = await fetch(`https://roadrescue-08r3.onrender.com/api/vehicles/add?ownerId=${currentUser.id}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(vehicle)
@@ -231,7 +231,7 @@ const vehicle = {
         // Load Vehicles into dropdown
         async function loadMyVehicles() {
             try {
-                const res = await fetch(`http://localhost:8080/api/vehicles/owner/${currentUser.id}`);
+                const res = await fetch(`https://roadrescue-08r3.onrender.com/api/vehicles/owner/${currentUser.id}`);
                 if (res.ok) {
                     const vehicles = await res.json();
                     const select = document.getElementById('selectVehicle');
@@ -252,7 +252,7 @@ const vehicle = {
 
     const type = document.getElementById('serviceSearchDropdown').value;
     try {
-        const res = await fetch(`http://localhost:8080/api/shops/search?serviceType=${type}`);
+        const res = await fetch(`https://roadrescue-08r3.onrender.com/api/shops/search?serviceType=${type}`);
         if (res.ok) {
             let shops = await res.json();
             const select = document.getElementById('selectShop');
@@ -302,7 +302,7 @@ const vehicle = {
             };
 
             try {
-                const res = await fetch('http://localhost:8080/api/bookings/create', {
+                const res = await fetch('https://roadrescue-08r3.onrender.com/api/bookings/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -321,7 +321,7 @@ const vehicle = {
         // Load History
         async function loadHistory() {
             try {
-                const res = await fetch(`http://localhost:8080/api/bookings/owner/${currentUser.id}`);
+                const res = await fetch(`https://roadrescue-08r3.onrender.com/api/bookings/owner/${currentUser.id}`);
                 if (res.ok) {
                     const history = await res.json();
                     const tbody = document.getElementById('historyTableBody');
@@ -352,7 +352,7 @@ const vehicle = {
             
             if (rating >= 1 && rating <= 5) {
                 try {
-                    const res = await fetch(`http://localhost:8080/api/bookings/${bookingId}/complete`, {
+                    const res = await fetch(`https://roadrescue-08r3.onrender.com/api/bookings/${bookingId}/complete`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ rating: parseInt(rating), reviewText: review || "" })

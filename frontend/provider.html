@@ -182,7 +182,7 @@ document.getElementById('addShopForm').addEventListener('submit', async (e) => {
     };
     
     try {
-        const res = await fetch(`http://localhost:8080/api/shops/add?providerId=${currentUser.id}`, {
+        const res = await fetch(`https://roadrescue-08r3.onrender.com/api/shops/add?providerId=${currentUser.id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
         
@@ -206,7 +206,7 @@ document.getElementById('addShopForm').addEventListener('submit', async (e) => {
 async function loadMyShops() {
     const select = document.getElementById('myShopsSelect');
     try {
-        const res = await fetch(`http://localhost:8080/api/shops/provider/${currentUser.id}`);
+        const res = await fetch(`https://roadrescue-08r3.onrender.com/api/shops/provider/${currentUser.id}`);
         if (res.ok) {
             const shops = await res.json();
             
@@ -235,7 +235,7 @@ async function loadMyShops() {
             tbody.innerHTML = '<tr><td colspan="5" class="text-center">Loading jobs...</td></tr>';
 
             try {
-                const res = await fetch(`http://localhost:8080/api/bookings/shop/${shopId}`);
+                const res = await fetch(`https://roadrescue-08r3.onrender.com/api/bookings/shop/${shopId}`);
                 if (res.ok) {
                     const jobs = await res.json();
                     tbody.innerHTML = '';
@@ -282,7 +282,7 @@ async function loadMyShops() {
             if(!confirm(`Are you sure you want to ${status} this job?`)) return;
 
             try {
-                const res = await fetch(`http://localhost:8080/api/bookings/${bookingId}/status?status=${status}`, {
+                const res = await fetch(`https://roadrescue-08r3.onrender.com/api/bookings/${bookingId}/status?status=${status}`, {
                     method: 'PUT'
                 });
                 if(res.ok) {
